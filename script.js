@@ -14,53 +14,36 @@ document.querySelectorAll('.nav-links a').forEach(link => {
     });
 });
 
-// 2. SMOOTH INTERACTIVE SCROLL CAROUSEL
-const track = document.getElementById('carouselTrack');
-const container = document.querySelector('.carousel-container');
-const prevBtn = document.getElementById('prevBtn');
-const nextBtn = document.getElementById('nextBtn');
+// 2. RENDERING FALLBACK MATRIX FOR BROWSERS LACKING CSS TIMELINES (e.g., iOS Safari)
+const zoomCards = document.querySelectorAll('.zoom-card');
 
-// Manual Click Button Navigation
-const getScrollAmount = () => {
-    const card = document.querySelector('.service-card');
-    const cardWidth = card.getBoundingClientRect().width;
-    const gap = parseFloat(getComputedStyle(track).gap) || 32;
-    return cardWidth + gap;
-};
+// Check if browser natively supports CSS Scroll-Driven Timelines
+if (!CSS.supports('animation-timeline', 'view()')) {
+    
+    // Config fallback classes to bypass layout engine bottlenecks
+    zoomCards.forEach(card => card.classList.add('js-fallback'));
 
-nextBtn.addEventListener('click', () => {
-    container.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
-});
+    const zoomCallback = (entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('zoom-active');
+            } else {
+                // Remove class when it scrolls out to allow beautiful continuous zoom-in behaviors
+                entry.target.classList.remove('zoom-active');
+            }
+        });
+    };
 
-prevBtn.addEventListener('click', () => {
-    container.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
-});
+    const zoomObserver = new IntersectionObserver(zoomCallback, {
+        root: null,
+        rootMargin: '-10% 0px -10% 0px', // Triggers cleanly within standard viewport view boundaries
+        threshold: 0.15
+    });
 
-// Infinite Auto-Rotation Loop
-let autoPlayTimer;
-const startAutoPlay = () => {
-    autoPlayTimer = setInterval(() => {
-        const isEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
-        if (isEnd) {
-            container.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-            container.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
-        }
-    }, 4000); // Rotates shifts every 4 seconds
-};
+    zoomCards.forEach(card => zoomObserver.observe(card));
+}
 
-const stopAutoPlay = () => clearInterval(autoPlayTimer);
-
-// Pause auto-rotation when user interacts with elements
-container.addEventListener('mouseenter', stopAutoPlay);
-container.addEventListener('mouseleave', startAutoPlay);
-container.addEventListener('touchstart', stopAutoPlay, { passive: true });
-container.addEventListener('touchend', startAutoPlay);
-
-// Initialize Carousel Loop
-startAutoPlay();
-
-// 3. ENHANCED PERFORMANCE INTERSECTION OBSERVER ANIMATION
+// 3. ENHANCED PERFORMANCE INTERSECTION OBSERVER ANIMATION FOR BASIC SECTIONS
 const revealElements = document.querySelectorAll('.scroll-reveal');
 
 const revealCallback = (entries, observer) => {
