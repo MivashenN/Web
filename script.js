@@ -40,7 +40,10 @@ if (!CSS.supports('animation-timeline', 'view()')) {
         threshold: 0.15
     });
 
-    zoomCards.forEach(card => zoomObserver.observe(card));
+    // Delay observation target registration until the page layout fully settles
+    window.addEventListener('load', () => {
+        zoomCards.forEach(card => zoomObserver.observe(card));
+    });
 }
 
 // 3. ENHANCED PERFORMANCE INTERSECTION OBSERVER ANIMATION FOR BASIC SECTIONS
@@ -60,4 +63,15 @@ const revealObserver = new IntersectionObserver(revealCallback, {
     threshold: 0.15
 });
 
-revealElements.forEach(el => revealObserver.observe(el));
+// Delay basic section animations until page initialization is complete
+window.addEventListener('load', () => {
+    revealElements.forEach(el => revealObserver.observe(el));
+});
+
+// 4. SAFARI MOBILE SCROLL RESET PATCH
+// Forces the viewport engine back to the header once asset painting completes
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        window.scrollTo(0, 0);
+    }, 10);
+});
