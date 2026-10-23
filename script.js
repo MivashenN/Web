@@ -17,33 +17,22 @@ document.querySelectorAll('.nav-links a').forEach(link => {
 // 2. RENDERING FALLBACK MATRIX FOR BROWSERS LACKING CSS TIMELINES (e.g., iOS Safari)
 const zoomCards = document.querySelectorAll('.zoom-card');
 
-// Check if browser natively supports CSS Scroll-Driven Timelines
 if (!CSS.supports('animation-timeline', 'view()')) {
-    
-    // Config fallback classes to bypass layout engine bottlenecks
     zoomCards.forEach(card => card.classList.add('js-fallback'));
 
     const zoomCallback = (entries) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('zoom-active');
-            } else {
-                // Remove class when it scrolls out to allow beautiful continuous zoom-in behaviors
-                entry.target.classList.remove('zoom-active');
-            }
+            entry.target.classList.toggle('zoom-active', entry.isIntersecting);
         });
     };
 
     const zoomObserver = new IntersectionObserver(zoomCallback, {
         root: null,
-        rootMargin: '-10% 0px -10% 0px', // Triggers cleanly within standard viewport view boundaries
-        threshold: 0.15
+        rootMargin: '-10% 0px -10% 0px',
+        threshold: 0.25 // slightly higher threshold reduces jitter
     });
 
-    // Delay observation target registration until the page layout fully settles
-    window.addEventListener('load', () => {
-        zoomCards.forEach(card => zoomObserver.observe(card));
-    });
+    zoomCards.forEach(card => zoomObserver.observe(card));
 }
 
 // 3. ENHANCED PERFORMANCE INTERSECTION OBSERVER ANIMATION FOR BASIC SECTIONS
@@ -60,18 +49,18 @@ const revealCallback = (entries, observer) => {
 
 const revealObserver = new IntersectionObserver(revealCallback, {
     root: null,
-    threshold: 0.15
+    threshold: 0.25
 });
 
-// Delay basic section animations until page initialization is complete
-window.addEventListener('load', () => {
-    revealElements.forEach(el => revealObserver.observe(el));
-});
+revealElements.forEach(el => revealObserver.observe(el));
 
-// 4. SAFARI MOBILE SCROLL RESET PATCH
-// Forces the viewport engine back to the header once asset painting completes
+// 4. SAFARI MOBILE SCROLL RESET PATCH (conditional)
 window.addEventListener('load', () => {
-    setTimeout(() => {
-        window.scrollTo(0, 0);
-    }, 10);
+    const ua = navigator.userAgent;
+    const isSafari = ua.includes('Safari') && !ua.includes('Chrome') && !ua.includes('Edg');
+    if (isSafari) {
+        setTimeout(() => {
+            window.scrollTo(0, 0);
+        }, 10);
+    }
 });
